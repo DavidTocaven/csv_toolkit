@@ -6,17 +6,11 @@ NOMS, PRÉNOMS
 """
 # imports
 import csv
-import sys
 import copy
 import re
 
-
-def replace_double_string_delimiter_by_simple(csv_filename: str, encoding: str):
-    data = ""
-    with open(csv_filename, mode="r", encoding=encoding) as file:
-        data = file.read().replace('"', "").replace("'", "")
-    with open(csv_filename, mode="w", encoding=encoding) as file:
-        file.write(data)
+from version_git.dicts_list_toolkit import remove_keys_in_dicts, remove_dict_if, is_not_empty, is_not_validee, \
+    values_as_list, remove_duplicates, reverse_keys_list_dict, union_minus_intersection, add_key_all_dicts, reduce_data
 
 
 def open_csv(csv_filename: str, csv_delimiter: str, encoding: str = 'utf-8-sig', string_delimiter: str = "'"):
@@ -52,154 +46,26 @@ def open_csv(csv_filename: str, csv_delimiter: str, encoding: str = 'utf-8-sig',
 #                 a_dict[k_clean] = v_clean
 
 
-def reduce_data(list_of_dicts: list[dict], keys_to_keep):
-    # extract list of unwanted keys
-    unwanted_keys = list(list_of_dicts[0].keys())
-    i_key = 0
-    while i_key < len(unwanted_keys):
-        if unwanted_keys[i_key] in keys_to_keep:
-            unwanted_keys.pop(i_key)
-            i_key -= 1
-        i_key += 1
-    # print(unwanted_keys)
-    # remove unwanted keys and values
-    remove_keys_list_of_dicts(list_of_dicts, unwanted_keys)
-
-
-def default_fct_condition(val: str):
-    return True
-
-
-def remove_keys_list_of_dicts(list_of_dicts: list[dict], keys: list[str], fct_condition=default_fct_condition):
-    """
-    remove all keys, values couples in all dicts of list_of_dicts according to the given list of keys.
-    :param fct_condition:
-    :param list_of_dicts:
-    :param keys:
-    :return:
-    """
-    for a_dict in list_of_dicts:
-        for a_key in keys:
-            if default_fct_condition(""):
-                a_dict.pop(a_key)
-
-
-def remove_dict_if(list_of_dicts: list[dict], key_of_interest: str, fct_condition_to_remove_data):
-    """
-    remove a dict of a list of dict under condition
-    :param list_of_dicts: input data, modified.
-    :param key_of_interest: the key inside the dict that is under condition
-    :param fct_condition_to_remove_data: a Boolean function, if its return true, the key and value are removed
-    :return:
-    """
-    i_dict = 0
-    removed_dict = []
-    while i_dict < len(list_of_dicts):
-        if fct_condition_to_remove_data(list_of_dicts[i_dict].get(key_of_interest)):
-            removed_dict.append(list_of_dicts.pop(i_dict))
-        else:
-            i_dict += 1
-    # print(removed_dict)
-
-
 # function used into remove_dict_if
 
-def is_not_empty(val):
-    """
-    the boolean condition used in remove_dict_if
-    :param val:
-    :return:
-    """
-    if val != "":
-        return True
-    return False
 
-
-def is_not_validee(val):
-    return val == "Validée"
-
-
-def split_name_surname(list_of_dicts: list[dict], column_name):
+def split_name_surname(list_of_dicts: list[dict], original_key: str, new_keys: list[str] = ["Nom", "Prénom"]):
     for data in list_of_dicts:
         # get name and surname and  remove it from dict
-        list_name = data.pop(column_name).split()
+        list_name = data.pop(original_key).split()
         # separate them into two str
         name = []
         surname = []
         for word in list_name:
-            word = word.replace('"', "")
-            word = word.replace("'", "")
+            # word = word.replace('"', "")
+            # word = word.replace("'", "")
             if word.isupper():
                 name.append(word)
             else:
                 surname.append(word)
         # add them to the dict
-        data["Nom"] = ' '.join(name)
-        data["Prénom"] = ' '.join(surname)
-
-
-def print_list_of_dicts(classe: list[dict]):
-    i = 0
-    for eleve_dict in classe:
-        print(f"{i}:")
-        for k, v in eleve_dict.items():
-            print(f"\t{k}: {v}")
-        i += 1
-
-
-def values_as_list(list_of_dicts: list[dict], key: str):
-    values = []
-    for a_dict in list_of_dicts:
-        values.append(a_dict.get(key))
-    return values
-
-
-def remove_duplicates(list_of_dicts: list[dict], list_keys: list[str] = []):
-    """
-    Remove the dicts in list_of_dicts if they have duplicates, only considering list_keys keys.
-    :param list_of_dicts:
-    :param list_keys: keys to consider. If no value, all keys are used
-    :return:
-    """
-    cp_list_of_dicts = copy.deepcopy(list_of_dicts)
-    if list_keys:
-        # find keys to removed
-        l_keys = [x for x in list_of_dicts[0].keys() if x not in list_keys]
-        remove_keys_list_of_dicts(cp_list_of_dicts, l_keys)
-
-    duplicates_i = []
-    i = 0
-    j = 1
-    while i < len(cp_list_of_dicts):
-        j = i + 1
-        while j < len(cp_list_of_dicts):
-            if cp_list_of_dicts[i] == cp_list_of_dicts[j]:
-                if not (list_of_dicts[i].get("Status") == "Validée"):
-                    list_of_dicts.pop(i)
-                    j += 1
-                else:
-                    list_of_dicts.pop(j)
-            else:
-                j += 1
-        i += 1
-
-
-def reverse_keys_list_dict(list_of_dicts: list[dict]):
-    for i in range(len(list_of_dicts)):
-        list_of_dicts[i] = {k: list_of_dicts[i][k] for k in reversed(list_of_dicts[i].keys())}
-
-
-def not_intersection(dicts_list_1: list[dict], dicts_list_2: list[dict]):
-    # TODO finir la fonction
-    # reverse_keys_list_dict(dicts_list_1)
-    intersect = []
-    for x in dicts_list_1:
-        if x in dicts_list_2:
-            intersect.append(x)
-    print(intersect)
-    not_common = [x for x in dicts_list_1 if x not in intersect]
-    not_common2 = [x for x in dicts_list_2 if x not in intersect]
-    return not_common + not_common2
+        data[new_keys[0]] = ' '.join(name)
+        data[new_keys[1]] = ' '.join(surname)
 
 
 def save_csv(list_of_dict: list[dict], filename: str, delimiter: str = ";"):
@@ -224,6 +90,7 @@ def clean_name_surname(list_of_dicts: list[dict], l_keys: list[str] = ["Nom", "P
                 # a_dict[k] = a_dict.get(k).replace("  ", " ")
                 a_dict[k] = a_dict.get(k).strip()
 
+
 def seconde_session(classe_csv_filename: str,
                     pix_result_csv_filename: str,
                     output_filename_suffix: str = "_seconde_session",
@@ -241,15 +108,15 @@ def seconde_session(classe_csv_filename: str,
 
     # Classe
     classe = open_csv(classe_repository + classe_csv_filename, ";")
-    # print_list_of_dicts(classe)
+    # print_list_of_dicts(list_of_dicts)
     reduce_data(classe, classe_columns_of_interest)
-    # print_list_of_dicts(classe)
+    # print_list_of_dicts(list_of_dicts)
 
     remove_dict_if(classe, "Sortie", is_not_empty)  # remove students that quited high-school
-    remove_keys_list_of_dicts(classe, ["Sortie"])
+    remove_keys_in_dicts(classe, ["Sortie"])
     split_name_surname(classe, classe_columns_of_interest[0])
     clean_name_surname(classe)
-    # print_list_of_dicts(classe)
+    # print_list_of_dicts(list_of_dicts)
 
     # Pix
     pix_result = open_csv(pix_result_repository + pix_result_csv_filename, ";", string_delimiter='"')
@@ -261,7 +128,7 @@ def seconde_session(classe_csv_filename: str,
     # print_list_of_dicts(pix_result)
     # for a_dict in pix_result:
     #     print(a_dict)
-    # print("classe : ", classe)
+    # print("list_of_dicts : ", list_of_dicts)
     # print(pix_result)
     pix_not_validee = copy.deepcopy(pix_result)
     remove_dict_if(pix_not_validee, 'Statut', is_not_validee)
@@ -269,7 +136,7 @@ def seconde_session(classe_csv_filename: str,
     reduce_data(pix_result, pix_final_columns)
     # print(pix_not_validee)
     # print("résultat pix : ", pix_result)
-    list_not_common = not_intersection(pix_result, classe)
+    list_not_common = union_minus_intersection(pix_result, classe)
     # print("list_not_common : ", list_not_common)
     pix_do_it_again = list_not_common + pix_not_validee
     # print("pix_do_it_again : ")
@@ -287,11 +154,6 @@ def seconde_session(classe_csv_filename: str,
 
     save_csv(pix_do_it_again, absent_repository + diff_list_csv_filename)
     return absent_repository + diff_list_csv_filename
-
-
-def add_key_all_dicts(list_of_dicts: list[dict], key: str, value: str):
-    for a_dict in list_of_dicts:
-        a_dict[key] = value
 
 
 def fusion_csvs(list_of_csv_filenames: list[str],
