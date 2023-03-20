@@ -69,7 +69,7 @@ def split_name_surname(list_of_dicts: list[dict], original_key: str, new_keys: l
 
 
 def save_csv(list_of_dict: list[dict], filename: str, delimiter: str = ";"):
-    with open(filename, mode="w", encoding='utf-8') as file:
+    with open(filename, mode="w", encoding='latin-1') as file:
         writer = csv.writer(file, delimiter=delimiter)
         writer.writerow(list_of_dict[0].keys())
 
@@ -86,17 +86,17 @@ def clean_name_surname(list_of_dicts: list[dict], l_keys: list[str] = ["Nom", "P
     for a_dict in list_of_dicts:
         for k in l_keys:
             if not a_dict.get(k).isalpha():
-                a_dict[k] = re.sub("[^a-zA-Z]+", " ", a_dict.get(k))
-                # a_dict[k] = a_dict.get(k).replace("  ", " ")
+                a_dict[k] = re.sub("[\"\'-]+", " ", a_dict.get(k))
+                a_dict[k] = a_dict.get(k).replace("-", " ")
                 a_dict[k] = a_dict.get(k).strip()
 
 
 def seconde_session(classe_csv_filename: str,
                     pix_result_csv_filename: str,
                     output_filename_suffix: str = "_seconde_session",
-                    classe_repository: str = "classes/",
-                    pix_result_repository: str = "resultats_pix/",
-                    absent_repository: str = "abs/"):
+                    classe_repository: str = "../classes/",
+                    pix_result_repository: str = "../resultats_pix/",
+                    absent_repository: str = "../abs/"):
     ## Variables
     classe_columns_of_interest = ["Élève", "Sortie"]
 
@@ -198,8 +198,12 @@ if __name__ == '__main__':
 
     if COMPUTE_DEBUG:
         # Test avec TG5
-        classe_csv_filename = "TG5.csv"
-        pix_result_csv_filename = "20230313_resultats_TG5.csv"
-
+        # classe_csv_filename = "TG5.csv"
+        # pix_result_csv_filename = "20230313_resultats_TG5.csv"
+        classe_csv_filename = "TG6.csv"
+        path_classe = "../classes/"
+        pix_result_csv_filename = "20230320_resultats_TG6.csv"
+        path_resultat = "../resultats_pix/"
         # diff_list_csv_filename = "TG5_abs.csv"
-        seconde_session(classe_csv_filename, pix_result_csv_filename)
+        seconde_session(classe_csv_filename=classe_csv_filename, classe_repository=path_classe,
+                        pix_result_csv_filename=pix_result_csv_filename, pix_result_repository=path_resultat)

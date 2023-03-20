@@ -26,7 +26,7 @@ def remove_keys_in_dicts(list_of_dicts: list[dict], keys: list[str], fct_conditi
     """
     for a_dict in list_of_dicts:
         for a_key in keys:
-            if default_fct_condition(""):
+            if default_fct_condition(""):  # TODO : change default_fct_condition to fct_condition
                 a_dict.pop(a_key)
 
 
@@ -40,7 +40,7 @@ def remove_dict_if(list_of_dicts: list[dict], key_of_interest: str, fct_conditio
     :return:
     """
     i_dict = 0
-    removed_dict = []
+    removed_dict = []  # TODO : remove this unused list
     while i_dict < len(list_of_dicts):
         if fct_condition_to_remove_data(list_of_dicts[i_dict].get(key_of_interest)):
             removed_dict.append(list_of_dicts.pop(i_dict))
@@ -48,15 +48,13 @@ def remove_dict_if(list_of_dicts: list[dict], key_of_interest: str, fct_conditio
             i_dict += 1
 
 
-def is_not_empty(val:str):
+def is_not_empty(val: str):
     """
     Boolean condition used with the remove_dict_if function. It returns True if the value val is empty, False otherwise.
     :param val: A string value.
     :return:
     """
-    if val != "":
-        return True
-    return False
+    return val != ""
 
 
 def is_not_validee(val):
@@ -91,40 +89,116 @@ def values_as_list(list_of_dicts: list[dict], key: str):
     :param key:
     :return:
     """
-    values = []
-    for a_dict in list_of_dicts:
-        values.append(a_dict.get(key))
-    return values
+    # values = []
+    # for a_dict in list_of_dicts:
+    #     values.append(a_dict.get(key))
+    # return values
+    return [a_dict.get(key) for a_dict in list_of_dicts]  # TODO : to test
 
 
-def remove_duplicates(list_of_dicts: list[dict], keys: list[str] = []):
+def remove_duplicates(list_of_dicts: list[dict],
+                      keys: list[str] = [],
+                      key_to_keep_if_duplicates: str = "Statut",
+                      value_to_keep_if_duplicates: str = "Validée"):
     """
     Remove some dicts in list_of_dicts to have no duplicates. The dicts can be compared  only on keys pairs.
+    :param value_to_keep_if_duplicates:
     :param list_of_dicts:
     :param keys: keys to consider. If no value given, all keys are compared.
     :return:
     """
+    ## Create a copy of list_of_dicts to seach duplicates considering keys parameter
     cp_list_of_dicts = copy.deepcopy(list_of_dicts)
+
+    # if there is specified keys
     if keys:
         # find keys to removed
         l_keys = [x for x in list_of_dicts[0].keys() if x not in keys]
         remove_keys_in_dicts(cp_list_of_dicts, l_keys)
 
-    duplicates_i = []
+    # a list that contains lists. Each lists contain indices of sames duplicates.
+    list_of_duplicates = []
+    # a list that contains indices to link into.
+    # When a duplicate dicts ars found, the second index is removed to this list. This avoid
+    searching_indices = list(range(len(cp_list_of_dicts)))
+
+    # find duplicates
     i = 0
     j = 1
-    while i < len(cp_list_of_dicts):
+    while i < len(searching_indices):
         j = i + 1
-        while j < len(cp_list_of_dicts):
-            if cp_list_of_dicts[i] == cp_list_of_dicts[j]:
-                if not (list_of_dicts[i].get("Status") == "Validée"):
-                    list_of_dicts.pop(i)
-                    j += 1
-                else:
-                    list_of_dicts.pop(j)
+        while j < len(searching_indices):
+            if cp_list_of_dicts[searching_indices[i]] == cp_list_of_dicts[searching_indices[j]]:
+                if searching_indices[j] == searching_indices[i] + 1:  # if first duplicate of i found
+                    # add a new list into list_of_duplicates that contains i index
+                    list_of_duplicates.append([searching_indices[i]])
+
+                list_of_duplicates[-1].append(searching_indices[j])  # add j inside the last list of list_of_duplicates.
+                searching_indices.pop(j)  # remove j index of searching_indices list.
             else:
                 j += 1
         i += 1
+    # print(list_of_duplicates)
+
+
+    # chose a dict to keep and remove other duplicates.
+
+    # reverse list_of_duplicates and sub lists
+    list_of_duplicates.reverse()
+    for li in list_of_duplicates:
+        li.reverse()
+    #
+    for a_duplicate_list_of_indices in list_of_duplicates:
+        # create a list of
+        status_of_duplicates = values_as_list([list_of_dicts[i] for i in a_duplicate_list_of_indices],
+                                              key_to_keep_if_duplicates)
+        index_to_keep = 0  # the index in a_duplicate_list_of_indices that contains the index to keep into list_of_dicts
+        if value_to_keep_if_duplicates in status_of_duplicates:
+            # find the firs index of "Validée" statut
+            index_to_keep = status_of_duplicates.index(value_to_keep_if_duplicates)
+        # if there is no a value_to_keep_if_duplicates, it keeps the first index
+
+        # remove all index_to_keep into a_duplicate_list_of_indices
+        a_duplicate_list_of_indices.pop(index_to_keep)
+        if index_to_keep != 0:
+            for a in a_duplicate_list_of_indices:
+                a -= 1
+        # remove all dict of list_of_dicts that indices are in a_duplicate_list_of_indices
+        print("list of indices to remove :", a_duplicate_list_of_indices)
+        # a_duplicate_list_of_indices.reverse()  # to avoid that the removing of a dict modify the index of other ones
+        for i in a_duplicate_list_of_indices:
+            list_of_dicts.pop(i)
+            # if i isnt the bi
+
+    # print("len of list_of_dicts", len(list_of_dicts))
+    # print_list_of_dicts(list_of_dicts)
+    # exit()
+
+    # duplicates_i = []
+    # i = 0  # original list index
+    # j = 1  # copied list index
+    # while i < len(cp_list_of_dicts):  # until the end of cp_list_of_dicts
+    #     j = i + 1
+    #     while j < len(cp_list_of_dicts):  # until the end of cp_list_of_dicts
+    #         if cp_list_of_dicts[i] == cp_list_of_dicts[j]:  # if dicts at i and j indices are equals
+    #             if not (list_of_dicts[i].get("Status") == "Validée"):  # if the i dict status is not equal to "Validée"
+    #                 list_of_dicts.pop(i)
+    #                 # j += 1
+    #             else:
+    #                 list_of_dicts.pop(j)
+    #         # else:
+    #         j += 1
+    #
+    #     i += 1
+
+    """
+    Other way : 
+    1. create a list that contains the lists of sames dict indices in list_of_dicts.
+    2. in each list of sames dicts
+        if one dict has Status equal "Validée", remove the other ones
+        else, keep the first, delete the other ones.
+    
+    """
 
 
 def reverse_keys_list_dict(list_of_dicts: list[dict]):
@@ -179,20 +253,13 @@ def reduce_data(list_of_dicts: list[dict], keys_to_keep: list[str]):
     :return:
     """
     # extract list of unwanted keys
-    unwanted_keys = list(list_of_dicts[0].keys())
-    for k in keys_to_keep:
-        unwanted_keys.remove(k)
-    #
-    # i_key = 0
-    # while i_key < len(unwanted_keys):
-    #     if unwanted_keys[i_key] in keys_to_keep:
-    #         unwanted_keys.pop(i_key)
-    #         i_key -= 1
-    #     i_key += 1
-    # print(unwanted_keys)
-    # remove unwanted keys and values
-    remove_keys_in_dicts(list_of_dicts, unwanted_keys)
+    if list_of_dicts:
+        unwanted_keys = list(list_of_dicts[0].keys())
+        for k in keys_to_keep:
+            unwanted_keys.remove(k)
 
+        # remove unwanted keys and values
+        remove_keys_in_dicts(list_of_dicts, unwanted_keys)
 
 
 if __name__ == "__main__":
